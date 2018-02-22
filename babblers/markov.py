@@ -3,38 +3,40 @@ from string import punctuation
 import random
 
 class Markov:
-    def __init__(self, text=None, n=1, start_same = False, split=' '):
-        self.text = self._parse_text(text)
-        self.n = round(n)
+    def __init__(self, text=None, n=2, start_same = False, split=None):
+        self.n = round(n) + 1
         self.start_same = start_same
         self.split = split
+        self.text = self._parse_text(text)
         self.ngrams, self.starts = self._generate_ngrams()
 
-    def generate(self, length=500):
-        babbled = ''
+    def _generate(self, length):
         if self.start_same:
             curr = [None] * self.n
         else:
             curr = random.choice(self.starts)
 
         for i in range(length):
-            next = random.choice(self.ngrams[curr])
-            curr.remove(0)
+            next = random.choice(self.ngrams[str(curr)])
+            curr.pop(0)
             curr.append(next)
-            babbled += next + " "
-        return babbled
+            yield next
+
+    def generate(self, length=500):
+        return ' '.join(self._generate(length))
 
     def _generate_ngrams(self):
         ngrams, starts = {}, []
         curr = [None] * self.n
         for i in range(len(self.text) - 1):
-            curr.remove(0)
+            curr.pop(0)
             curr.append(self.text[i])
-            if curr not in ngrams:
-                ngrams[curr] = []
-            ngrams[curr].append(self.text[i + 1])
+            key = str(curr)
+            if key not in ngrams:
+                ngrams[key] = []
+            ngrams[key].append(self.text[i + 1])
             if self.text[i] in '!.?':
-                starts.append(self.text[i+1:i+n])
+                starts.append(self.text[i: i + self.n])
         return ngrams, starts
 
     def _parse_text(self, text):
@@ -55,8 +57,6 @@ class Markov:
             _text = ''
             for file in text:
                 _text += self._parse_text(file)
-        # raise TypeError("Text must be TextIOWrapper, str, not {0}".format(type(text)))
-
         _text = _text.split(self.split)
         if self.start_same:
             _text = [None] * self.n + _text
@@ -66,8 +66,8 @@ class Markov:
             parsed.append(word.strip(punctuation))
             if word.endswith(tuple(punctuation)):
                 parsed.append(word.strip(word.strip(punctuation)))
-        return parsed
+        return list(filter(bool, parsed))
 
 
-def generate(text=None, n=1, start_same = False, split=' '):
+def generate(text=None, n=2, start_same = False, split=' '):
     return Markov(text=text, n=n, start_same=start_same).generate()
