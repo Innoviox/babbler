@@ -103,3 +103,6 @@ ENV/
 #Pycharm
 .idea/
 .idea/workspace.xml
+
+#MacOS
+*.DS_Store
