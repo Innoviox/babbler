@@ -1,29 +1,13 @@
 from _io import TextIOWrapper
+from string import punctuation
 
 class Markov:
     def __init__(self, text=None, n=1, start_same = False, split=' '):
-        if text == None:
-            self.text = None
-        elif isinstance(text, TextIOWrapper):
-            with text as file:
-                self.text = file.read()
-        elif isinstance(text, str):
-            try:
-                with open(text) as file:
-                    self.text = file.read()
-            except FileNotFoundError:
-                self.text = text
-        else:
-            raise TypeError("Text must be TextIOWrapper or str, not {0}".format(type(text)))
-
+        self.text = self._parse_text(text)
         self.n = round(n)
         self.start_same = start_same
         self.split = split
-        self.text = self.text.split(self.split)
-        if start_same:
-            for _ in range(n):
-                self.text.insert(0, None)
-
+        self.ngrams = self._generate_ngrams()
 
     def generate(self):
         pass
@@ -38,6 +22,33 @@ class Markov:
                 ngrams[curr] = []
             ngrams[curr].append(self.text[i + 1])
         return ngrams
+
+    def _parse_text(self, text):
+        if text == None:
+            _text = None
+        elif isinstance(text, TextIOWrapper):
+            with text as file:
+                _text = file.read()
+        elif isinstance(text, str):
+            try:
+                with open(text) as file:
+                    _text = file.read()
+            except FileNotFoundError:
+                _text = text
+        else:
+            raise TypeError("Text must be TextIOWrapper or str, not {0}".format(type(text)))
+
+        _text = _text.split(self.split)
+        if self.start_same:
+            _text = [None] * self.n + _text
+
+        parsed = []
+        for word in _text:
+            if word.endswith(tuple(punctuation)):
+                parsed.append(word.strip(punctuation))
+                parsed.append(word.strip(word.strip(punctuation)))
+        return parsed
+
 
 def generate(text=None, n=1, start_same = False, split=' '):
     return Markov(text=text, n=n, start_same=start_same).generate()
